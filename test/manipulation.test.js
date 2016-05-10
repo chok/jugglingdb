@@ -28,26 +28,23 @@ describe('manipulation', function() {
         });
 
         it('should create instance', function(done) {
-            Person.create({name: 'Anatoliy'}, function(err, p) {
+            Person.create({name: 'Anatoliy'}).then(function(p) {
                 p.name.should.equal('Anatoliy');
-                should.not.exist(err);
                 should.exist(p);
                 Person.find(p.id, function(err, person) {
                     person.id.should.equal(p.id);
                     person.name.should.equal('Anatoliy');
                     done();
                 });
-            });
+            }).catch(done);
         });
 
         it('should return instance of object', function(done) {
-            var person = Person.create(function(err, p) {
-                p.id.should.eql(person.id);
+            Person.create().then(function(person) {
+                should.exist(person);
+                person.should.be.an.instanceOf(Person);
                 done();
-            });
-            should.exist(person);
-            person.should.be.an.instanceOf(Person);
-            should.not.exist(person.id);
+            }).catch(done);
         });
 
         it('should work when called without callback', function(done) {
@@ -109,8 +106,8 @@ describe('manipulation', function() {
                     should.not.exist(persons[0].errors);
                     should.exist(persons[2].errors);
                     done();
-                }).should.be.instanceOf(Array);
-            }).should.have.lengthOf(3);
+                });
+            });
         });
     });
 
@@ -190,11 +187,11 @@ describe('manipulation', function() {
                     cb(false);
                     return false;
                 };
-                (function() {
-                    p.save({
-                        'throws': true
-                    });
-                }).should.throw('Validation error');
+                p.save({
+                    'throws': true
+                }).catch(function(err) {
+                    should.exist(err);
+                });
             });
         });
 
@@ -215,7 +212,10 @@ describe('manipulation', function() {
 
         before(function(done) {
             Person.destroyAll(function() {
-                person = Person.create(done);
+                Person.create().then(function(pers) {
+                    person = pers;
+                    done();
+                });
             });
         });
 
@@ -266,16 +266,20 @@ describe('manipulation', function() {
     describe('iterate', function() {
 
         before(function(next) {
-            var ps = [];
-            for (var i = 0; i < 507; i += 1) {
-                ps.push({name: 'Person ' + i});
-            }
-            Person.create(ps, next);
+            Person.destroyAll().then(function() {
+                var ps = [];
+                for (var i = 0; i < 507; i += 1) {
+                    ps.push({name: 'Person ' + i});
+                }
+                Person.create(ps).then(function(x) {
+                    next();
+                });
+            });
         });
 
         it('should iterate through the batch of objects', function(done) {
             var num = 0;
-            Person.iterate({batchSize: 100}, function(person, next, i) {
+            Person.iterate({batchSize: 100, limit: 507}, function(person, next, i) {
                 num += 1;
                 next();
             }, function(err) {
