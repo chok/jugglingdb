@@ -46,7 +46,7 @@ exports.loadSchema = function(filename, settings, compound) {
     }
 };
 
-exports.init = function (compound) {
+exports.init = function (compound, options) {
     if (global.railway) {
         global.railway.orm = exports;
     } else {
@@ -91,7 +91,7 @@ exports.init = function (compound) {
             console.log(e.stack);
         }
         if (init) {
-            init(compound);
+            init(compound, options);
         }
     }
 };
